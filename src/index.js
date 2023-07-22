@@ -1,4 +1,4 @@
-const { Client, IntentsBitField } = require('discord.js');
+const { Client, IntentsBitField, EmbedBuilder } = require('discord.js');
 const { CommandHandler } = require('djs-commander');
 require('dotenv').config();
 const path = require('path');
@@ -8,6 +8,7 @@ const client = new Client({
         IntentsBitField.Flags.Guilds,
         IntentsBitField.Flags.GuildMembers,
         IntentsBitField.Flags.GuildMessages,
+        IntentsBitField.Flags.GuildMessageReactions,
         IntentsBitField.Flags.MessageContent,
     ]
 });
@@ -46,6 +47,35 @@ process.on('uncaughtException', (err) => {
 // Handles ExceptionMonitors(error catchers)
 process.on('uncaughtExceptionMonitor', (err, origin) => {
     console.log('Uncaught Exception Monitor: ', err, origin);
+});
+
+// Skullboard Collector
+client.on('messageReactionAdd', async (reaction, user) => {
+    const skull = '💀';
+    const skullboardChannelId = '1132190346785333248';
+
+    if (reaction.emoji.name === skull && reaction.count === 3 && reaction.channel.id !== skullboardChannelId) {
+        const embed = new EmbedBuilder()
+        .setColor(`#2b2d31`)
+        .setAuthor({ name: `${reaction.message.author.tag}`, iconURL: `${reaction.message.author.displayAvatarURL()}` })
+        .setTitle('Click me to jump to the message!')
+        .setURL(`${reaction.message.url}`)
+        .setDescription(`${reaction.message.content}`)
+        if (reaction.message.attachments.size > 0) {
+            try {
+                embed.setImage(`${reaction.message.attachments.first()?.url}`);
+            } catch (err) {
+                console.log(`Couldn't set image for skullboard.`);
+                return;
+            }
+            
+        }
+                
+        const channel = client.channels.cache.get(skullboardChannelId);
+        channel.send({ embeds: [embed] })
+    }
+
+    return;
 });
 
 client.login(process.env.TOKEN);
